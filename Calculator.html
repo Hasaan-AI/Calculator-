@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Calculator — BODMAS & Linear Equations</title>
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --accent: #6c63ff;
+    --accent-hover: #5a52d5;
+    --text: #e0e0e0;
+    --text-dim: #8888aa;
+    --border: #2a2a40;
+    --btn: #252540;
+    --btn-hover: #30304d;
+    --danger: #ff6b6b;
+    --success: #51cf66;
+    --orange: #ff922b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 16px;
+  }
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle { color: var(--text-dim); margin-bottom: 24px; font-size: 0.9rem; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .tab-btn {
+    padding: 10px 28px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(108,99,255,0.35);
+  }
+  .tab-btn:hover:not(.active) { background: var(--btn); color: var(--text); }
+
+  /* Panels */
+  .panel { display: none; width: 100%; max-width: 480px; }
+  .panel.active { display: block; }
+
+  /* Calculator Card */
+  .calc-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  /* Display */
+  .display {
+    background: #12121f;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    overflow-x: auto;
+  }
+  .display .expression {
+    font-size: 1rem;
+    color: var(--text-dim);
+    word-break: break-all;
+    text-align: right;
+    min-height: 1.2em;
+  }
+  .display .result {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    word-break: break-all;
+    text-align: right;
+  }
+
+  /* Button Grid */
+  .btn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .btn-grid button {
+    padding: 16px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--btn);
+    color: var(--text);
+  }
+  .btn-grid button:hover { background: var(--btn-hover); transform: translateY(-1px); }
+  .btn-grid button:active { transform: translateY(0); }
+  .btn-grid .op { color: var(--accent); font-weight: 700; }
+  .btn-grid .clear { color: var(--danger); }
+  .btn-grid .equals {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-grid .equals:hover { background: var(--accent-hover); }
+  .btn-grid .span2 { grid-column: span 2; }
+
+  /* History */
+  .history-title {
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .history-title button {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  .history-list {
+    margin-top: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .history-item {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #12121f;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .history-item:hover { background: var(--btn); }
+  .history-item .hist-result { color: var(--success); float: right; font-weight: 600; }
+
+  /* Equation Solver */
+  .eq-section { margin-bottom: 18px; }
+  .eq-section label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .eq-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 1.1rem;
+    background: #12121f;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .eq-input:focus { border-color: var(--accent); }
+  .eq-input::placeholder { color: #444466; }
+
+  .solve-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .solve-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+  .eq-result-box {
+    margin-top: 16px;
+    padding: 16px;
+    background: #12121f;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    min-height: 50px;
+  }
+  .eq-result-box .step {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    font-family: 'Consolas', monospace;
+    line-height: 1.6;
+  }
+  .eq-result-box .step.final {
+    color: var(--success);
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-top: 10px;
+  }
+  .eq-result-box .step.error { color: var(--danger); }
+
+  .examples {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(108,99,255,0.08);
+    border: 1px solid rgba(108,99,255,0.2);
+    border-radius: 10px;
+  }
+  .examples h4 {
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .examples code {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    padding: 3px 0;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .examples code:hover { color: var(--text); }
+
+  /* Keyboard shortcuts bar */
+  .shortcuts {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+  .shortcuts kbd {
+    background: var(--btn);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<h1>⚡ Advanced Calculator</h1>
+<p class="subtitle">BODMAS Expression Evaluator & Linear Equation Solver</p>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('calc')">Calculator</button>
+  <button class="tab-btn" onclick="switchTab('eq')">Equation Solver</button>
+</div>
+
+<!-- ==================== CALCULATOR PANEL ==================== -->
+<div id="panel-calc" class="panel active">
+  <div class="calc-card">
+    <div class="display">
+      <div class="expression" id="expr"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="btn-grid">
+      <button class="clear" onclick="clearAll()">AC</button>
+      <button class="clear" onclick="backspace()">⌫</button>
+      <button class="op" onclick="append('(')">(</button>
+      <button class="op" onclick="append(')')">)</button>
+
+      <button onclick="append('7')">7</button>
+      <button onclick="append('8')">8</button>
+      <button onclick="append('9')">9</button>
+      <button class="op" onclick="append('÷')">÷</button>
+
+      <button onclick="append('4')">4</button>
+      <button onclick="append('5')">5</button>
+      <button onclick="append('6')">6</button>
+      <button class="op" onclick="append('×')">×</button>
+
+      <button onclick="append('1')">1</button>
+      <button onclick="append('2')">2</button>
+      <button onclick="append('3')">3</button>
+      <button class="op" onclick="append('-')">−</button>
+
+      <button onclick="append('0')">0</button>
+      <button onclick="append('.')">.</button>
+      <button class="op" onclick="append('^')">^</button>
+      <button class="op" onclick="append('+')">+</button>
+
+      <button class="equals span2" onclick="calculate()">=</button>
+      <button class="op" onclick="append('%')">%</button>
+      <button class="op" onclick="append('√')">√</button>
+    </div>
+
+    <div class="history-title">
+      History
+      <button onclick="clearHistory()">Clear</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+</div>
+
+<!-- ==================== EQUATION SOLVER PANEL ==================== -->
+<div id="panel-eq" class="panel">
+  <div class="calc-card">
+    <div class="eq-section">
+      <label>Enter Linear Equation (in x)</label>
+      <input type="text" class="eq-input" id="eq-input" placeholder="e.g. 2x + 3 = 7" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="solve-btn" onclick="solveEquation()">🧮 Solve Equation</button>
+
+    <div class="eq-result-box" id="eq-result">
+      <div class="step" style="color: var(--text-dim);">Enter an equation above and click Solve.</div>
+    </div>
+
+    <div class="examples">
+      <h4>💡 Try these examples</h4>
+      <code onclick="tryExample(this)">2x + 3 = 7</code>
+      <code onclick="tryExample(this)">3(x + 2) = 15</code>
+      <code onclick="tryExample(this)">5x - 2(x + 1) = 10</code>
+      <code onclick="tryExample(this)">x/4 + 3 = x/2 - 1</code>
+      <code onclick="tryExample(this)">2(3x - 1) + 4 = 3(2x + 1) - 5</code>
+      <code onclick="tryExample(this)">0.5x + 1.5 = 3.5</code>
+      <code onclick="tryExample(this)">-(x - 3) + 2x = 5</code>
+    </div>
+  </div>
+</div>
+
+<div class="shortcuts">
+  <kbd>Enter</kbd> = Calculate &nbsp; <kbd>Esc</kbd> = Clear &nbsp; <kbd>Backspace</kbd> = Delete
+</div>
+
+<script>
+// ======================== TAB SWITCHING ========================
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-btn')[tab === 'calc' ? 0 : 1].classList.add('active');
+}
+
+// ======================== BODMAS CALCULATOR ========================
+let expression = '';
+let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
+renderHistory();
+
+function append(ch) {
+  expression += ch;
+  document.getElementById('expr').textContent = expression;
+}
+
+function clearAll() {
+  expression = '';
+  document.getElementById('expr').textContent = '';
+  document.getElementById('result').textContent = '0';
+}
+
+function backspace() {
+  expression = expression.slice(0, -1);
+  document.getElementById('expr').textContent = expression;
+}
+
+function calculate() {
+  if (!expression.trim()) return;
+  try {
+    const result = evaluateBODMAS(expression);
+    document.getElementById('result').textContent = formatNumber(result);
+    history.unshift({ expr: expression, result: formatNumber(result) });
+    if (history.length > 30) history.pop();
+    localStorage.setItem('calcHistory', JSON.stringify(history));
+    renderHistory();
+  } catch (e) {
+    document.getElementById('result').textContent = 'Error';
+  }
+}
+
+function formatNumber(n) {
+  if (Number.isInteger(n) && Math.abs(n) < 1e15) return n.toString();
+  const s = parseFloat(n.toPrecision(12));
+  return s.toString();
+}
+
+// ---------- Tokenizer & Parser for BODMAS ----------
+function evaluateBODMAS(expr) {
+  // Normalize
+  let s = expr
+    .replace(/÷/g, '/')
+    .replace(/×/g, '*')
+    .replace(/−/g, '-')
+    .replace(/\^/g, '**')
+    .replace(/√(\d+(\.\d+)?)/g, 'Math.sqrt($1)')
+    .replace(/√\(/g, 'Math.sqrt(')
+    .replace(/%/g, '/100');
+
+  // Insert implicit multiplication: 2( -> 2*(, )(  -> )*(
+  s = s.replace(/(\d)\(/g, '$1*(');
+  s = s.replace(/\)(\d)/g, ')*$1');
+  s = s.replace(/\)\(/g, ')*(');
+
+  // Validate: only allowed chars
+  if (/[^0-9+\-*/().%\s,Mathsqrt]/.test(s.replace(/Math\.sqrt/g, ''))) {
+    throw new Error('Invalid character');
+  }
+
+  // Use Function to safely evaluate (no access to global scope beyond Math)
+  const fn = new Function('Math', 'return (' + s + ')');
+  const result = fn(Math);
+
+  if (typeof result !== 'number' || !isFinite(result)) throw new Error('Bad result');
+  return result;
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  el.innerHTML = '';
+  history.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = h.expr + ' <span class="hist-result">= ' + h.result + '</span>';
+    div.onclick = () => {
+      expression = h.expr;
+      document.getElementById('expr').textContent = expression;
+      document.getElementById('result').textContent = h.result;
+    };
+    el.appendChild(div);
+  });
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.removeItem('calcHistory');
+  renderHistory();
+}
+
+// ======================== LINEAR EQUATION SOLVER ========================
+function tryExample(el) {
+  document.getElementById('eq-input').value = el.textContent;
+  solveEquation();
+}
+
+function solveEquation() {
+  const raw = document.getElementById('eq-input').value.trim();
+  const box = document.getElementById('eq-result');
+  box.innerHTML = '';
+
+  if (!raw) {
+    box.innerHTML = '<div class="step error">Please enter an equation.</div>';
+    return;
+  }
+
+  if (!raw.includes('=')) {
+    box.innerHTML = '<div class="step error">Equation must contain an "=" sign.</div>';
+    return;
+  }
+
+  try {
+    const steps = [];
+    steps.push('Given:  ' + raw);
+
+    const [lhsRaw, rhsRaw] = raw.split('=').map(s => s.trim());
+    steps.push('LHS = ' + lhsRaw);
+    steps.push('RHS = ' + rhsRaw);
+
+    // Parse both sides into coefficient and constant: ax + b
+    const lhs = parseLinear(lhsRaw);
+    const rhs = parseLinear(rhsRaw);
+
+    steps.push('');
+    steps.push('Parsed LHS: ' + fmtLinear(lhs));
+    steps.push('Parsed RHS: ' + fmtLinear(rhs));
+
+    // Move everything to one side: (lhs.coeff - rhs.coeff)x = rhs.const - lhs.const
+    const coeffX = lhs.coeff - rhs.coeff;
+    const constant = rhs.const_ - lhs.const_;
+
+    steps.push('');
+    steps.push('Rearranging: all x terms to left, constants to right');
+    steps.push(fmtNum(coeffX) + 'x = ' + fmtNum(constant));
+
+    if (coeffX === 0) {
+      if (constant === 0) {
+        steps.push('');
+        box.innerHTML = steps.map(s => `<div class="step">${esc(s)}</div>`).join('');
+        box.innerHTML += '<div class="step final">Infinite solutions (identity)</div>';
+        return;
+      } else {
+        steps.push('');
+        box.innerHTML = steps.map(s => `<div class="step">${esc(s)}</div>`).join('');
+        box.innerHTML += '<div class="step error">No solution (contradiction)</div>';
+        return;
+      }
+    }
+
+    const solution = constant / coeffX;
+    steps.push('x = ' + fmtNum(constant) + ' / ' + fmtNum(coeffX));
+
+    box.innerHTML = steps.map(s => `<div class="step">${esc(s)}</div>`).join('');
+
+    const formatted = Number.isInteger(solution) ? solution.toString() : parseFloat(solution.toPrecision(10)).toString();
+    box.innerHTML += '<div class="step final">x = ' + formatted + '</div>';
+
+    // Verify
+    const verifyLHS = lhs.coeff * solution + lhs.const_;
+    const verifyRHS = rhs.coeff * solution + rhs.const_;
+    const diff = Math.abs(verifyLHS - verifyRHS);
+    if (diff < 1e-9) {
+      box.innerHTML += '<div class="step" style="color:var(--success);margin-top:8px;">✓ Verified: LHS = RHS = ' + formatNumber(verifyLHS) + '</div>';
+    }
+
+  } catch (e) {
+    box.innerHTML = '<div class="step error">⚠ ' + esc(e.message) + '</div>';
+  }
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtNum(n) {
+  if (Number.isInteger(n)) return n >= 0 ? n.toString() : '(' + n + ')';
+  return parseFloat(n.toPrecision(10)).toString();
+}
+
+function fmtLinear(obj) {
+  return fmtNum(obj.coeff) + 'x + ' + fmtNum(obj.const_);
+}
+
+// ---------- Linear Expression Parser ----------
+// Parses expressions like "2x + 3", "3(x+2)", "x/4 + 3", "-(x-3)+2x"
+// Returns { coeff: number, const_: number } where expression = coeff*x + const_
+function parseLinear(expr) {
+  // Tokenize
+  const tokens = tokenize(expr);
+  // Parse into tree, then evaluate to {coeff, const_}
+  const parser = new LinearParser(tokens);
+  const result = parser.parseExpression();
+  if (parser.pos < parser.tokens.length) {
+    throw new Error('Unexpected token: ' + parser.tokens[parser.pos].value);
+  }
+  return result;
+}
+
+function tokenize(expr) {
+  const tokens = [];
+  let i = 0;
+  const s = expr.replace(/\s+/g, '');
+  while (i < s.length) {
+    const ch = s[i];
+    if (ch >= '0' && ch <= '9' || ch === '.') {
+      let num = '';
+      while (i < s.length && (s[i] >= '0' && s[i] <= '9' || s[i] === '.')) num += s[i++];
+      // Check if followed by 'x'
+      if (i < s.length && s[i] === 'x') {
+        tokens.push({ type: 'COEFF', value: parseFloat(num) });
+        tokens.push({ type: 'X', value: 'x' });
+        i++;
+      } else {
+        tokens.push({ type: 'NUM', value: parseFloat(num) });
+      }
+    } else if (ch === 'x') {
+      tokens.push({ type: 'COEFF', value: 1 });
+      tokens.push({ type: 'X', value: 'x' });
+      i++;
+    } else if ('+-'.includes(ch)) {
+      tokens.push({ type: 'OP', value: ch });
+      i++;
+    } else if (ch === '*' || ch === '×') {
+      tokens.push({ type: 'OP', value: '*' });
+      i++;
+    } else if (ch === '/' || ch === '÷') {
+      tokens.push({ type: 'OP', value: '/' });
+      i++;
+    } else if (ch === '(') {
+      tokens.push({ type: 'LPAREN', value: '(' });
+      i++;
+    } else if (ch === ')') {
+      tokens.push({ type: 'RPAREN', value: ')' });
+      i++;
+    } else {
+      throw new Error('Unknown character: ' + ch);
+    }
+  }
+  return tokens;
+}
+
+class LinearParser {
+  constructor(tokens) {
+    this.tokens = tokens;
+    this.pos = 0;
+  }
+
+  peek() {
+    return this.pos < this.tokens.length ? this.tokens[this.pos] : null;
+  }
+
+  consume(type) {
+    const t = this.tokens[this.pos];
+    if (!t || (type && t.type !== type)) throw new Error('Expected ' + type + ' but got ' + (t ? t.type : 'end'));
+    this.pos++;
+    return t;
+  }
+
+  // expression = term (('+' | '-') term)*
+  parseExpression() {
+    let result = this.parseTerm();
+    while (this.peek() && this.peek().type === 'OP' && (this.peek().value === '+' || this.peek().value === '-')) {
+      const op = this.consume('OP').value;
+      const right = this.parseTerm();
+      if (op === '+') {
+        result = { coeff: result.coeff + right.coeff, const_: result.const_ + right.const_ };
+      } else {
+        result = { coeff: result.coeff - right.coeff, const_: result.const_ - right.const_ };
+      }
+    }
+    return result;
+  }
+
+  // term = unary (('*' | '/') unary)*
+  parseTerm() {
+    let result = this.parseUnary();
+    while (this.peek() && this.peek().type === 'OP' && (this.peek().value === '*' || this.peek().value === '/')) {
+      const op = this.consume('OP').value;
+      const right = this.parseUnary();
+      if (op === '*') {
+        result = multiplyLinear(result, right);
+      } else {
+        result = divideLinear(result, right);
+      }
+    }
+    return result;
+  }
+
+  // unary = ('-')* atom  (handles implicit multiplication like 2(x+1))
+  parseUnary() {
+    let neg = 1;
+    while (this.peek() && this.peek().type === 'OP' && this.peek().value === '-') {
+      this.consume('OP');
+      neg *= -1;
+    }
+    // Also consume leading '+' signs
+    while (this.peek() && this.peek().type === 'OP' && this.peek().value === '+') {
+      this.consume('OP');
+    }
+    let result = this.parseAtom();
+    result = { coeff: result.coeff * neg, const_: result.const_ * neg };
+
+    // Handle implicit multiplication: atom followed by '(' or COEFF or NUM without operator
+    while (this.peek() && (this.peek().type === 'LPAREN' || this.peek().type === 'COEFF' || this.peek().type === 'NUM')) {
+      // Only if no operator in between
+      const right = this.parseAtom();
+      result = multiplyLinear(result, right);
+    }
+
+    return result;
+  }
+
+  // atom = NUM | COEFF X | '(' expression ')'
+  parseAtom() {
+    const t = this.peek();
+    if (!t) throw new Error('Unexpected end of expression');
+
+    if (t.type === 'NUM') {
+      this.consume('NUM');
+      return { coeff: 0, const_: t.value };
+    }
+
+    if (t.type === 'COEFF') {
+      this.consume('COEFF');
+      this.consume('X');
+      return { coeff: t.value, const_: 0 };
+    }
+
+    if (t.type === 'LPAREN') {
+      this.consume('LPAREN');
+      const result = this.parseExpression();
+      this.consume('RPAREN');
+      return result;
+    }
+
+    throw new Error('Unexpected token: ' + t.value);
+  }
+}
+
+function multiplyLinear(a, b) {
+  // (ax + c1) * (bx + c2) — only valid if at most one has x
+  if (a.coeff !== 0 && b.coeff !== 0) {
+    throw new Error('Cannot solve: equation is not linear (x² term found).');
+  }
+  return {
+    coeff: a.coeff * b.const_ + a.const_ * b.coeff,
+    const_: a.const_ * b.const_
+  };
+}
+
+function divideLinear(a, b) {
+  if (b.coeff !== 0) {
+    throw new Error('Cannot divide by an expression containing x.');
+  }
+  if (b.const_ === 0) throw new Error('Division by zero.');
+  return {
+    coeff: a.coeff / b.const_,
+    const_: a.const_ / b.const_
+  };
+}
+
+// ======================== KEYBOARD SUPPORT ========================
+document.addEventListener('keydown', (e) => {
+  // Calculator panel
+  if (document.getElementById('panel-calc').classList.contains('active')) {
+    if (document.activeElement === document.getElementById('eq-input')) return;
+    if (e.key === 'Enter') { e.preventDefault(); calculate(); }
+    else if (e.key === 'Escape') { clearAll(); }
+    else if (e.key === 'Backspace') { backspace(); }
+    else if (e.key >= '0' && e.key <= '9') { append(e.key); }
+    else if (e.key === '.') { append('.'); }
+    else if (e.key === '+') { append('+'); }
+    else if (e.key === '-') { append('-'); }
+    else if (e.key === '*') { append('×'); }
+    else if (e.key === '/') { e.preventDefault(); append('÷'); }
+    else if (e.key === '(' || e.key === ')') { append(e.key); }
+    else if (e.key === '%') { append('%'); }
+    else if (e.key === '^') { append('^'); }
+  }
+  // Equation panel
+  if (document.getElementById('panel-eq').classList.contains('active')) {
+    if (e.key === 'Enter') { e.preventDefault(); solveEquation(); }
+  }
+});
+</script>
+
+</body>
+</html>
